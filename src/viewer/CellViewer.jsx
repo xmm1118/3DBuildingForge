@@ -341,359 +341,555 @@ function PresentationEnvironment({ profile }) {
 }
 
 
-// ===== Building Body Rendering (replaces PlantCellModel and CellBodyGeometry) =====
 
-function BuildingBody({ cellId, color, opacity, wireframe = false, wireColor = '#f4f0e4', wireOpacity = 0.12 }) {
-  const matProps = wireframe
-    ? { color: wireColor, wireframe: true, transparent: true, opacity: wireOpacity }
-    : { color, transparent: true, opacity, roughness: 0.5, metalness: 0.05, transmission: 0.08, clearcoat: 0.35, clearcoatRoughness: 0.25 }
+// ===== Building 3D Models =====
 
-  switch (cellId) {
-    case 'residential':
-      return (
-        <group>
-          <mesh position={[0, 0, 0]}>
-            <boxGeometry args={[1.6, 1.0, 1.0]} />
-            <meshPhysicalMaterial {...matProps} />
-          </mesh>
-          <mesh position={[0, 0.72, 0]} rotation={[0, Math.PI / 4, 0]}>
-            <coneGeometry args={[1.22, 0.55, 4]} />
-            <meshPhysicalMaterial {...matProps} color={wireframe ? wireColor : '#c4634a'} />
-          </mesh>
-        </group>
-      )
-    case 'commercial':
-      return (
-        <group>
-          <mesh position={[0, 0, 0]}>
-            <boxGeometry args={[2.0, 1.4, 1.2]} />
-            <meshPhysicalMaterial {...matProps} />
-          </mesh>
-          <mesh position={[0, 0.72, 0.62]}>
-            <boxGeometry args={[1.8, 0.06, 0.3]} />
-            <meshPhysicalMaterial {...matProps} color={wireframe ? wireColor : '#6b7db3'} />
-          </mesh>
-        </group>
-      )
-    case 'office':
-      return (
-        <group>
-          <mesh position={[0, 0, 0]}>
-            <boxGeometry args={[0.9, 2.2, 0.8]} />
-            <meshPhysicalMaterial {...matProps} />
-          </mesh>
-          <mesh position={[0, 0.85, 0]}>
-            <boxGeometry args={[0.7, 0.5, 0.65]} />
-            <meshPhysicalMaterial {...matProps} color={wireframe ? wireColor : '#9b8ec4'} />
-          </mesh>
-        </group>
-      )
-    case 'cultural':
-      return (
-        <group>
-          <mesh position={[0, -0.2, 0]}>
-            <boxGeometry args={[1.6, 0.8, 1.2]} />
-            <meshPhysicalMaterial {...matProps} />
-          </mesh>
-          <mesh position={[0, 0.55, 0]} scale={[1, 0.65, 1]}>
-            <sphereGeometry args={[0.88, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
-            <meshPhysicalMaterial {...matProps} color={wireframe ? wireColor : '#d47878'} />
-          </mesh>
-        </group>
-      )
-    case 'industrial':
-      return (
-        <group>
-          <mesh position={[0, 0, 0]}>
-            <boxGeometry args={[2.2, 0.9, 1.2]} />
-            <meshPhysicalMaterial {...matProps} />
-          </mesh>
-          {[-0.55, 0.15, 0.85].map((x, i) => (
-            <mesh key={i} position={[x, 0.52, 0]}>
-              <boxGeometry args={[0.65, 0.2, 1.22]} />
-              <meshPhysicalMaterial {...matProps} color={wireframe ? wireColor : '#4a9a7f'} />
-            </mesh>
-          ))}
-        </group>
-      )
-    case 'educational':
-      return (
-        <group>
-          <mesh position={[0, 0, 0]}>
-            <boxGeometry args={[1.6, 1.2, 0.9]} />
-            <meshPhysicalMaterial {...matProps} />
-          </mesh>
-          <mesh position={[0.5, -0.1, 0.75]}>
-            <boxGeometry args={[0.5, 1.0, 0.3]} />
-            <meshPhysicalMaterial {...matProps} color={wireframe ? wireColor : '#5a8abf'} />
-          </mesh>
-        </group>
-      )
-    case 'medical':
-      return (
-        <group>
-          <mesh position={[0, 0, 0]}>
-            <boxGeometry args={[1.4, 1.6, 1.0]} />
-            <meshPhysicalMaterial {...matProps} />
-          </mesh>
-          <mesh position={[-0.9, -0.3, 0]}>
-            <boxGeometry args={[0.6, 1.0, 0.8]} />
-            <meshPhysicalMaterial {...matProps} />
-          </mesh>
-          <mesh position={[0.9, -0.3, 0]}>
-            <boxGeometry args={[0.6, 1.0, 0.8]} />
-            <meshPhysicalMaterial {...matProps} />
-          </mesh>
-        </group>
-      )
-    default:
-      return (
-        <mesh>
-          <boxGeometry args={[1.6, 1.2, 1.0]} />
-          <meshPhysicalMaterial {...matProps} />
-        </mesh>
-      )
-  }
-}
+// 各建筑类型的完整3D模型，每种类型有独特可辨的建筑外观
 
-// ===== Building-Specific Structures =====
-function BuildingSpecificStructures({ cellId, onSelect }) {
-  if (cellId === 'commercial') {
-    return (
-      <group>
-        <ClickableGroup id="membrane" onSelect={onSelect}>
-          {[-0.6, -0.2, 0.2, 0.6].map((x, i) => (
-            <Line key={i} points={[[x, -0.7, 0.61], [x, 0.7, 0.61]]} color="#7e6edb" lineWidth={2} transparent opacity={0.6} />
-          ))}
-          {[-0.35, 0, 0.35].map((y, i) => (
-            <Line key={y} points={[[-1.0, y, 0.61], [1.0, y, 0.61]]} color="#a78bfa" lineWidth={1.5} transparent opacity={0.5} />
-          ))}
-        </ClickableGroup>
-      </group>
-    )
-  }
-  if (cellId === 'office') {
-    return (
-      <group>
-        <ClickableGroup id="membrane" onSelect={onSelect}>
-          <mesh position={[0, 0, 0]}>
-            <boxGeometry args={[0.3, 2.0, 0.3]} />
-            <meshStandardMaterial color="#6b7280" roughness={0.6} />
-          </mesh>
-          {[-0.6, -0.2, 0.2, 0.6].map((y, i) => (
-            <Line key={i} points={[[-0.46, y, 0.41], [0.46, y, 0.41]]} color="#8b5cf6" lineWidth={2.5} transparent opacity={0.7} />
-          ))}
-        </ClickableGroup>
-      </group>
-    )
-  }
-  if (cellId === 'industrial') {
-    return (
-      <group>
-        <ClickableGroup id="membrane" onSelect={onSelect}>
-          {[-0.8, -0.15, 0.5].map((x, i) => (
-            <Line key={i} points={[[x, 0.46, -0.62], [x + 0.35, 0.62, -0.62], [x + 0.7, 0.46, -0.62]]} color="#5fbf9f" lineWidth={2.5} transparent opacity={0.7} />
-          ))}
-          <Line points={[[-1.0, 0.25, 0], [1.0, 0.25, 0]]} color="#69c6a9" lineWidth={3} transparent opacity={0.6} />
-        </ClickableGroup>
-      </group>
-    )
-  }
-  if (cellId === 'cultural') {
-    return (
-      <group>
-        <ClickableGroup id="membrane" onSelect={onSelect}>
-          <Line points={[[-0.4, -0.6, 0.61], [-0.4, -0.2, 0.61], [0, 0.0, 0.61], [0.4, -0.2, 0.61], [0.4, -0.6, 0.61]]} color="#e07a7a" lineWidth={2.5} transparent opacity={0.7} />
-          {[-0.3, 0, 0.3].map((x, i) => (
-            <Line key={i} points={[[x, -0.6, 0.4], [x, 0.6, 0]]} color="#f7d4cd" lineWidth={1.8} transparent opacity={0.6} />
-          ))}
-        </ClickableGroup>
-      </group>
-    )
-  }
-  if (cellId === 'medical') {
-    return (
-      <group>
-        <ClickableGroup id="membrane" onSelect={onSelect}>
-          <Line points={[[-0.6, 0, 0.4], [-0.6, 0, -0.4]]} color="#d25762" lineWidth={2} transparent opacity={0.6} />
-          <Line points={[[0.6, 0, 0.4], [0.6, 0, -0.4]]} color="#d25762" lineWidth={2} transparent opacity={0.6} />
-          {[[-0.2, 0.82, 0], [0.2, 0.82, 0], [0, 0.82, 0.2]].map((pos, i) => (
-            <mesh key={i} position={pos}>
-              <cylinderGeometry args={[0.06, 0.06, 0.12, 8]} />
-              <meshStandardMaterial color="#9ca3af" roughness={0.4} metalness={0.3} />
-            </mesh>
-          ))}
-        </ClickableGroup>
-      </group>
-    )
-  }
-  if (cellId === 'educational') {
-    return (
-      <group>
-        <ClickableGroup id="membrane" onSelect={onSelect}>
-          <mesh position={[0, 0, 0.46]}>
-            <boxGeometry args={[1.4, 0.06, 0.12]} />
-            <meshStandardMaterial color="#93c5fd" roughness={0.5} />
-          </mesh>
-          {[-0.4, 0.4].map((x, i) => (
-            <mesh key={i} position={[x, 0.1, 0.46]}>
-              <boxGeometry args={[0.35, 0.3, 0.02]} />
-              <meshPhysicalMaterial color="#87ceeb" transparent opacity={0.4} roughness={0.05} transmission={0.5} />
-            </mesh>
-          ))}
-        </ClickableGroup>
-      </group>
-    )
-  }
-  return null
-}
-
-// ===== Main Building Model (replaces both PlantCellModel and CellModel) =====
-function CellModel({ cellId, selected, crossSection, onSelect, hideOthers, proofMode, viewMode = 'layers' }) {
-  const group = useRef()
-  const body = CELL_BODY[cellId] ?? CELL_BODY['residential']
-  const xrayMode = viewMode === 'layers'
-  const focusMode = viewMode === 'focus'
-  const effectiveHideOthers = hideOthers || focusMode
-  const effectiveCrossSection = crossSection || xrayMode
+function ResidentialBuilding({ selected, onSelect, effectiveCrossSection, effectiveHideOthers }) {
   const show = (id) => !effectiveHideOthers || id === selected || id === 'membrane'
-  const bodyOpacity = effectiveHideOthers && selected !== 'membrane' ? 0.24 : effectiveCrossSection ? 0.38 : 0.66
-  const wireOpacity = xrayMode ? 0.28 : selected === 'membrane' ? 0.3 : 0.12
-  const proofOffset = (id) => {
-    if (!proofMode) return [0, 0, 0]
-    return {
-      nucleus: [0.2, -0.4, 0.3],
-      granules: [-0.2, 0.4, 0.3],
-      lysosome: [0.3, 0, 0.4],
-      mitochondria: [-0.3, 0.1, 0.5],
-    }[id] ?? [0, 0, 0]
-  }
-
-  const bodyHeight = cellId === 'office' ? 1.1 : cellId === 'medical' ? 0.8 : cellId === 'commercial' ? 0.7 : 0.5
-
-  // Equipment points (granules)
-  const equipmentPoints = useMemo(() => {
-    const count = cellId === 'medical' ? 20 : cellId === 'industrial' ? 16 : 12
-    return Array.from({ length: count }, (_, index) => {
-      const angle = (index / count) * Math.PI * 2
-      const r = 0.3 + seeded(index) * 0.4
-      return {
-        position: [Math.cos(angle) * r, 0.5 + seeded(index + 10) * 0.3, Math.sin(angle) * r * 0.6],
-        radius: 0.03 + seeded(index + 200) * 0.025,
-        color: ['#88a4c4', '#6b9dc4', '#5b82c4', '#7ba4d4'][index % 4],
-      }
-    })
-  }, [cellId])
-
-  // Structural columns (lysosome)
-  const structuralColumns = useMemo(() => {
-    const grids = {
-      commercial: [[-0.7, -0.4], [-0.7, 0.4], [0.7, -0.4], [0.7, 0.4], [0, -0.4], [0, 0.4]],
-      office: [[-0.3, -0.25], [-0.3, 0.25], [0.3, -0.25], [0.3, 0.25]],
-      educational: [[-0.5, 0.3], [0.5, 0.3], [-0.5, -0.3], [0.5, -0.3], [0, 0.3], [0, -0.3]],
-      medical: [[-0.4, 0.3], [0.4, 0.3], [-0.4, -0.3], [0.4, -0.3], [0, 0.3], [0, -0.3], [0, 0]],
-      cultural: [[-0.5, 0.3], [0.5, 0.3], [0, 0], [-0.5, -0.3], [0.5, -0.3]],
-      industrial: [[-0.8, 0.4], [-0.8, -0.4], [0, 0.4], [0, -0.4], [0.8, 0.4], [0.8, -0.4]],
-    }
-    return grids[cellId] ?? [[-0.4, 0.2], [0.4, 0.2], [-0.4, -0.2], [0.4, -0.2]]
-  }, [cellId])
-
   return (
-    <group ref={group} scale={1.8} rotation={[-0.08, -0.42, 0.05]}>
-      {/* 围护结构 - 建筑外壳 */}
+    <group scale={1.6} rotation={[-0.15, -0.5, 0]}>
+      {/* 围护结构 - 外墙+坡屋顶 */}
       <ClickableGroup id="membrane" onSelect={onSelect}>
-        <BuildingBody cellId={cellId} color={body.color} opacity={Math.min(bodyOpacity + 0.2, 0.95)} />
-        <BuildingBody cellId={cellId} color={body.color} opacity={1} wireframe wireColor={xrayMode ? '#6bc4d8' : '#f4f0e4'} wireOpacity={wireOpacity} />
-      </ClickableGroup>
-
-      {/* 剖面 */}
-      {effectiveCrossSection && (
-        <mesh position={[0, 0, 0.1]} rotation={[0, 0, 0]} scale={[1.6, 1.3, 1]}>
-          <planeGeometry args={[1, 1]} />
-          <meshBasicMaterial color="#f6e9dc" transparent opacity={0.32} side={THREE.DoubleSide} />
+        {/* 主体墙体 */}
+        <mesh position={[0, 0, 0]}>
+          <boxGeometry args={[1.8, 1.2, 1.4]} />
+          <meshStandardMaterial color="#f5e6d0" roughness={0.8} />
         </mesh>
-      )}
-
-      {/* 基础 */}
-      {show('nucleus') && cellId !== 'industrial' && (
-        <ClickableGroup id="nucleus" onSelect={onSelect} position={proofOffset('nucleus')}>
-          <mesh position={[0, -bodyHeight - 0.15, 0]}>
-            <boxGeometry args={[cellId === 'commercial' ? 2.2 : 1.8, 0.15, cellId === 'commercial' ? 1.4 : 1.2]} />
-            <meshPhysicalMaterial color="#8b8680" roughness={0.85} clearcoat={0.1} emissive={selected === 'nucleus' ? '#4c1d95' : '#000'} emissiveIntensity={selected === 'nucleus' ? 0.15 : 0} />
+        {/* 坡屋顶 */}
+        <mesh position={[0, 0.85, 0]} rotation={[0, Math.PI / 4, 0]}>
+          <coneGeometry args={[1.5, 0.7, 4]} />
+          <meshStandardMaterial color="#b85c38" roughness={0.7} />
+        </mesh>
+        {/* 窗户 */}
+        {[[-0.45, 0.15, 0.71], [0.45, 0.15, 0.71], [-0.45, -0.3, 0.71], [0.45, -0.3, 0.71]].map((pos, i) => (
+          <mesh key={i} position={pos}>
+            <boxGeometry args={[0.32, 0.28, 0.02]} />
+            <meshPhysicalMaterial color="#87ceeb" roughness={0.05} metalness={0.1} transmission={0.5} transparent opacity={0.7} />
           </mesh>
-          {selected === 'nucleus' && (
-            <mesh position={[0, -bodyHeight - 0.15, 0]}>
-              <boxGeometry args={[cellId === 'commercial' ? 2.26 : 1.86, 0.21, cellId === 'commercial' ? 1.46 : 1.26]} />
-              <meshBasicMaterial color="#7b4bb4" wireframe transparent opacity={0.28} />
-            </mesh>
-          )}
+        ))}
+        {/* 门 */}
+        <mesh position={[0, -0.25, 0.71]}>
+          <boxGeometry args={[0.3, 0.5, 0.02]} />
+          <meshStandardMaterial color="#8B4513" roughness={0.6} />
+        </mesh>
+      </ClickableGroup>
+      {/* 基础 */}
+      {show('nucleus') && (
+        <ClickableGroup id="nucleus" onSelect={onSelect}>
+          <mesh position={[0, -0.85, 0]}>
+            <boxGeometry args={[2.0, 0.25, 1.6]} />
+            <meshStandardMaterial color="#808080" roughness={0.9} emissive={selected === 'nucleus' ? '#4c1d95' : '#000'} emissiveIntensity={selected === 'nucleus' ? 0.2 : 0} />
+          </mesh>
         </ClickableGroup>
       )}
-
-      {/* 结构体系 - 柱网与梁 */}
-      {show('lysosome') && cellId !== 'industrial' && cellId !== 'medical' && (
-        <ClickableGroup id="lysosome" onSelect={onSelect} position={proofOffset('lysosome')}>
-          {structuralColumns.map(([x, z], i) => (
-            <mesh key={i} position={[x, 0, z]}>
-              <cylinderGeometry args={[0.035, 0.035, bodyHeight * 2, 8]} />
-              <meshStandardMaterial color="#6b7280" emissive={selected === 'lysosome' ? '#8d58b8' : '#374151'} emissiveIntensity={selected === 'lysosome' ? 0.3 : 0.05} roughness={0.4} metalness={0.3} />
+      {/* 结构体系 - 柱和梁 */}
+      {show('lysosome') && (
+        <ClickableGroup id="lysosome" onSelect={onSelect}>
+          {[[-0.7, 0, 0.55], [0.7, 0, 0.55], [-0.7, 0, -0.55], [0.7, 0, -0.55]].map((pos, i) => (
+            <mesh key={i} position={pos}>
+              <cylinderGeometry args={[0.04, 0.04, 1.2, 8]} />
+              <meshStandardMaterial color="#6b7280" emissive={selected === 'lysosome' ? '#8d58b8' : '#374151'} emissiveIntensity={selected === 'lysosome' ? 0.3 : 0.05} roughness={0.5} metalness={0.3} />
             </mesh>
           ))}
-          <mesh position={[0, bodyHeight * 0.8, 0]}>
-            <boxGeometry args={[1.4, 0.04, 0.8]} />
+          <mesh position={[0, 0.6, 0]}>
+            <boxGeometry args={[1.6, 0.06, 1.2]} />
             <meshStandardMaterial color="#9ca3af" roughness={0.5} />
           </mesh>
         </ClickableGroup>
       )}
-
-      {/* 围护结构补充 - 外墙保温层/屋面板 */}
-      {show('mitochondria') && cellId !== 'industrial' && (
-        <ClickableGroup id="mitochondria" onSelect={onSelect} position={proofOffset('mitochondria')}>
-          <mesh position={[0, 0, 0.52]}>
-            <boxGeometry args={[1.5, bodyHeight * 1.6, 0.04]} />
-            <meshStandardMaterial color="#df7046" emissive="#c2410c" emissiveIntensity={selected === 'mitochondria' ? 0.25 : 0.08} roughness={0.45} transparent opacity={0.7} />
-          </mesh>
-          <mesh position={[0, bodyHeight + 0.04, 0]}>
-            <boxGeometry args={[1.4, 0.04, 0.9]} />
-            <meshStandardMaterial color="#e07040" roughness={0.5} />
+      {/* 围护构件 - 保温层+屋面板 */}
+      {show('mitochondria') && (
+        <ClickableGroup id="mitochondria" onSelect={onSelect}>
+          <mesh position={[0, 0, 0.72]}>
+            <boxGeometry args={[1.76, 1.16, 0.04]} />
+            <meshStandardMaterial color="#e8a87c" emissive="#c2410c" emissiveIntensity={selected === 'mitochondria' ? 0.2 : 0.05} roughness={0.6} transparent opacity={0.8} />
           </mesh>
         </ClickableGroup>
       )}
+      {/* 设备系统 - 烟囱+空调外机 */}
+      {show('granules') && (
+        <ClickableGroup id="granules" onSelect={onSelect}>
+          <mesh position={[0.4, 1.15, 0]}>
+            <cylinderGeometry args={[0.06, 0.06, 0.3, 8]} />
+            <meshStandardMaterial color="#a0522d" roughness={0.6} />
+          </mesh>
+          <mesh position={[-0.6, -0.45, 0.72]}>
+            <boxGeometry args={[0.2, 0.15, 0.12]} />
+            <meshStandardMaterial color="#d4d4d4" roughness={0.4} metalness={0.3} />
+          </mesh>
+        </ClickableGroup>
+      )}
+    </group>
+  )
+}
 
-      {/* 设备系统 - 管线与设备点 */}
-      {show('granules') && cellId !== 'industrial' && (
-        <ClickableGroup id="granules" onSelect={onSelect} position={proofOffset('granules')}>
-          {equipmentPoints.map((pt, i) => (
-            <mesh key={i} position={pt.position}>
-              <sphereGeometry args={[pt.radius, 12, 12]} />
-              <meshStandardMaterial color={pt.color} emissive={selected === 'granules' ? '#5b82c4' : '#1e293b'} emissiveIntensity={selected === 'granules' ? 0.25 : 0.02} roughness={0.3} metalness={0.4} />
+function CommercialBuilding({ selected, onSelect, effectiveCrossSection, effectiveHideOthers }) {
+  const show = (id) => !effectiveHideOthers || id === selected || id === 'membrane'
+  return (
+    <group scale={1.5} rotation={[-0.15, -0.5, 0]}>
+      <ClickableGroup id="membrane" onSelect={onSelect}>
+        {/* 主楼体 */}
+        <mesh position={[0, 0, 0]}>
+          <boxGeometry args={[2.2, 1.8, 1.4]} />
+          <meshStandardMaterial color="#c8d8e8" roughness={0.3} metalness={0.15} />
+        </mesh>
+        {/* 幕墙竖向分格 */}
+        {[-0.8, -0.4, 0, 0.4, 0.8].map((x, i) => (
+          <mesh key={i} position={[x, 0, 0.71]}>
+            <boxGeometry args={[0.02, 1.78, 0.01]} />
+            <meshStandardMaterial color="#5a7da8" roughness={0.2} metalness={0.4} />
+          </mesh>
+        ))}
+        {/* 楼层线 */}
+        {[-0.5, 0, 0.5].map((y, i) => (
+          <mesh key={i} position={[0, y, 0.71]}>
+            <boxGeometry args={[2.18, 0.02, 0.01]} />
+            <meshStandardMaterial color="#5a7da8" roughness={0.2} metalness={0.4} />
+          </mesh>
+        ))}
+        {/* 入口雨棚 */}
+        <mesh position={[0, -0.75, 0.85]}>
+          <boxGeometry args={[0.8, 0.04, 0.3]} />
+          <meshStandardMaterial color="#4a6fa5" roughness={0.3} metalness={0.2} />
+        </mesh>
+        {/* 女儿墙 */}
+        <mesh position={[0, 0.92, 0]}>
+          <boxGeometry args={[2.24, 0.06, 1.44]} />
+          <meshStandardMaterial color="#b0c4d8" roughness={0.4} />
+        </mesh>
+      </ClickableGroup>
+      {show('nucleus') && (
+        <ClickableGroup id="nucleus" onSelect={onSelect}>
+          <mesh position={[0, -1.15, 0]}>
+            <boxGeometry args={[2.4, 0.25, 1.6]} />
+            <meshStandardMaterial color="#707070" roughness={0.85} emissive={selected === 'nucleus' ? '#4c1d95' : '#000'} emissiveIntensity={selected === 'nucleus' ? 0.2 : 0} />
+          </mesh>
+        </ClickableGroup>
+      )}
+      {show('lysosome') && (
+        <ClickableGroup id="lysosome" onSelect={onSelect}>
+          {[[-0.9, 0, 0.55], [0.9, 0, 0.55], [-0.9, 0, -0.55], [0.9, 0, -0.55], [0, 0, 0.55], [0, 0, -0.55]].map((pos, i) => (
+            <mesh key={i} position={pos}>
+              <cylinderGeometry args={[0.05, 0.05, 1.8, 8]} />
+              <meshStandardMaterial color="#5a6a7a" emissive={selected === 'lysosome' ? '#8d58b8' : '#374151'} emissiveIntensity={selected === 'lysosome' ? 0.3 : 0.05} roughness={0.4} metalness={0.4} />
             </mesh>
           ))}
         </ClickableGroup>
       )}
-
-      {/* 室内楼板 */}
-      {show('granules') && cellId !== 'industrial' && (
-        <ClickableGroup id="granules" onSelect={onSelect}>
-          {cellId === 'office' ? (
-            [-0.3, 0, 0.3, 0.6].map((y, i) => (
-              <mesh key={i} position={[0, y, 0]}>
-                <boxGeometry args={[0.7, 0.03, 0.6]} />
-                <meshStandardMaterial color="#d1d5db" transparent opacity={0.4} roughness={0.6} />
-              </mesh>
-            ))
-          ) : (
-            <mesh position={[0, 0, 0]}>
-              <boxGeometry args={[1.2, 0.03, 0.7]} />
-              <meshStandardMaterial color="#d1d5db" transparent opacity={0.4} roughness={0.6} />
-            </mesh>
-          )}
+      {show('mitochondria') && (
+        <ClickableGroup id="mitochondria" onSelect={onSelect}>
+          <mesh position={[0, 0, 0.72]}>
+            <boxGeometry args={[2.16, 1.76, 0.06]} />
+            <meshStandardMaterial color="#5a9fd4" transparent opacity={0.4} emissive="#2563eb" emissiveIntensity={selected === 'mitochondria' ? 0.2 : 0.05} roughness={0.1} metalness={0.3} />
+          </mesh>
         </ClickableGroup>
       )}
-
-      <BuildingSpecificStructures cellId={cellId} onSelect={onSelect} />
+      {show('granules') && (
+        <ClickableGroup id="granules" onSelect={onSelect}>
+          {/* 屋顶设备组 */}
+          <mesh position={[-0.5, 1.05, 0.2]}>
+            <boxGeometry args={[0.3, 0.2, 0.25]} />
+            <meshStandardMaterial color="#8a8a8a" roughness={0.5} metalness={0.3} />
+          </mesh>
+          <mesh position={[0.5, 1.05, -0.2]}>
+            <boxGeometry args={[0.25, 0.25, 0.2]} />
+            <meshStandardMaterial color="#8a8a8a" roughness={0.5} metalness={0.3} />
+          </mesh>
+          <mesh position={[0.5, 1.2, -0.2]}>
+            <cylinderGeometry args={[0.04, 0.04, 0.15, 8]} />
+            <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.5} />
+          </mesh>
+        </ClickableGroup>
+      )}
     </group>
   )
+}
+
+function OfficeBuilding({ selected, onSelect, effectiveCrossSection, effectiveHideOthers }) {
+  const show = (id) => !effectiveHideOthers || id === selected || id === 'membrane'
+  return (
+    <group scale={1.4} rotation={[-0.15, -0.5, 0]}>
+      <ClickableGroup id="membrane" onSelect={onSelect}>
+        {/* 塔楼主体 */}
+        <mesh position={[0, 0, 0]}>
+          <boxGeometry args={[1.0, 2.8, 0.9]} />
+          <meshStandardMaterial color="#b8c8e0" roughness={0.3} metalness={0.15} />
+        </mesh>
+        {/* 顶部收进 */}
+        <mesh position={[0, 1.2, 0]}>
+          <boxGeometry args={[0.8, 0.6, 0.75]} />
+          <meshStandardMaterial color="#a8b8d0" roughness={0.3} metalness={0.15} />
+        </mesh>
+        {/* 窗带 - 横向 */}
+        {[-0.9, -0.45, 0, 0.45, 0.9].map((y, i) => (
+          <mesh key={i} position={[0, y, 0.46]}>
+            <boxGeometry args={[0.96, 0.22, 0.01]} />
+            <meshPhysicalMaterial color="#6ca6cd" roughness={0.05} metalness={0.1} transmission={0.4} transparent opacity={0.6} />
+          </mesh>
+        ))}
+        {/* 核心筒 */}
+        <mesh position={[0, 0, 0]}>
+          <boxGeometry args={[0.3, 2.6, 0.3]} />
+          <meshStandardMaterial color="#7a8a9a" roughness={0.6} />
+        </mesh>
+        {/* 入口 */}
+        <mesh position={[0, -1.2, 0.46]}>
+          <boxGeometry args={[0.4, 0.35, 0.02]} />
+          <meshPhysicalMaterial color="#4a7ab5" roughness={0.05} transmission={0.5} transparent opacity={0.7} />
+        </mesh>
+      </ClickableGroup>
+      {show('nucleus') && (
+        <ClickableGroup id="nucleus" onSelect={onSelect}>
+          <mesh position={[0, -1.65, 0]}>
+            <boxGeometry args={[1.2, 0.25, 1.1]} />
+            <meshStandardMaterial color="#686868" roughness={0.85} emissive={selected === 'nucleus' ? '#4c1d95' : '#000'} emissiveIntensity={selected === 'nucleus' ? 0.2 : 0} />
+          </mesh>
+        </ClickableGroup>
+      )}
+      {show('lysosome') && (
+        <ClickableGroup id="lysosome" onSelect={onSelect}>
+          {[[-0.35, 0, 0.3], [0.35, 0, 0.3], [-0.35, 0, -0.3], [0.35, 0, -0.3]].map((pos, i) => (
+            <mesh key={i} position={pos}>
+              <cylinderGeometry args={[0.04, 0.04, 2.6, 8]} />
+              <meshStandardMaterial color="#5a6a7a" emissive={selected === 'lysosome' ? '#8d58b8' : '#374151'} emissiveIntensity={selected === 'lysosome' ? 0.3 : 0.05} roughness={0.4} metalness={0.4} />
+            </mesh>
+          ))}
+        </ClickableGroup>
+      )}
+      {show('mitochondria') && (
+        <ClickableGroup id="mitochondria" onSelect={onSelect}>
+          <mesh position={[0, 0, 0.47]}>
+            <boxGeometry args={[0.96, 2.76, 0.04]} />
+            <meshStandardMaterial color="#5a9fd4" transparent opacity={0.35} emissive="#2563eb" emissiveIntensity={selected === 'mitochondria' ? 0.2 : 0.05} roughness={0.1} />
+          </mesh>
+        </ClickableGroup>
+      )}
+      {show('granules') && (
+        <ClickableGroup id="granules" onSelect={onSelect}>
+          <mesh position={[0, 1.65, 0]}>
+            <boxGeometry args={[0.4, 0.15, 0.35]} />
+            <meshStandardMaterial color="#8a8a8a" roughness={0.5} metalness={0.3} />
+          </mesh>
+          <mesh position={[0.2, 1.75, 0]}>
+            <cylinderGeometry args={[0.03, 0.03, 0.12, 8]} />
+            <meshStandardMaterial color="#a0a0a0" metalness={0.5} />
+          </mesh>
+        </ClickableGroup>
+      )}
+    </group>
+  )
+}
+
+function CulturalBuilding({ selected, onSelect, effectiveCrossSection, effectiveHideOthers }) {
+  const show = (id) => !effectiveHideOthers || id === selected || id === 'membrane'
+  return (
+    <group scale={1.5} rotation={[-0.15, -0.5, 0]}>
+      <ClickableGroup id="membrane" onSelect={onSelect}>
+        {/* 基座 */}
+        <mesh position={[0, -0.3, 0]}>
+          <boxGeometry args={[2.0, 0.8, 1.4]} />
+          <meshStandardMaterial color="#e8d8c8" roughness={0.7} />
+        </mesh>
+        {/* 穹顶 */}
+        <mesh position={[0, 0.55, 0]} scale={[1, 0.7, 1]}>
+          <sphereGeometry args={[1.0, 32, 20, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial color="#c8785a" roughness={0.5} />
+        </mesh>
+        {/* 拱形入口 */}
+        <mesh position={[0, -0.45, 0.71]}>
+          <boxGeometry args={[0.5, 0.5, 0.02]} />
+          <meshPhysicalMaterial color="#5a8ab5" roughness={0.1} transmission={0.4} transparent opacity={0.6} />
+        </mesh>
+        {/* 柱廊 */}
+        {[-0.6, -0.3, 0.3, 0.6].map((x, i) => (
+          <mesh key={i} position={[x, -0.1, 0.72]}>
+            <cylinderGeometry args={[0.04, 0.05, 0.8, 8]} />
+            <meshStandardMaterial color="#f0e0d0" roughness={0.6} />
+          </mesh>
+        ))}
+      </ClickableGroup>
+      {show('nucleus') && (
+        <ClickableGroup id="nucleus" onSelect={onSelect}>
+          <mesh position={[0, -0.95, 0]}>
+            <boxGeometry args={[2.2, 0.25, 1.6]} />
+            <meshStandardMaterial color="#707070" roughness={0.85} emissive={selected === 'nucleus' ? '#4c1d95' : '#000'} emissiveIntensity={selected === 'nucleus' ? 0.2 : 0} />
+          </mesh>
+        </ClickableGroup>
+      )}
+      {show('lysosome') && (
+        <ClickableGroup id="lysosome" onSelect={onSelect}>
+          {[[-0.7, 0, 0.5], [0.7, 0, 0.5], [-0.7, 0, -0.5], [0.7, 0, -0.5], [0, 0, 0.5], [0, 0, -0.5]].map((pos, i) => (
+            <mesh key={i} position={pos}>
+              <cylinderGeometry args={[0.04, 0.04, 0.8, 8]} />
+              <meshStandardMaterial color="#7a6a5a" emissive={selected === 'lysosome' ? '#8d58b8' : '#374151'} emissiveIntensity={selected === 'lysosome' ? 0.3 : 0.05} roughness={0.5} metalness={0.3} />
+            </mesh>
+          ))}
+        </ClickableGroup>
+      )}
+      {show('mitochondria') && (
+        <ClickableGroup id="mitochondria" onSelect={onSelect}>
+          <mesh position={[0, -0.3, 0.72]}>
+            <boxGeometry args={[1.96, 0.76, 0.04]} />
+            <meshStandardMaterial color="#d4a078" transparent opacity={0.7} emissive="#c2410c" emissiveIntensity={selected === 'mitochondria' ? 0.2 : 0.05} roughness={0.5} />
+          </mesh>
+        </ClickableGroup>
+      )}
+      {show('granules') && (
+        <ClickableGroup id="granules" onSelect={onSelect}>
+          <mesh position={[0, 0.95, 0]}>
+            <cylinderGeometry args={[0.05, 0.05, 0.2, 8]} />
+            <meshStandardMaterial color="#a08060" roughness={0.4} />
+          </mesh>
+        </ClickableGroup>
+      )}
+    </group>
+  )
+}
+
+function IndustrialBuilding({ selected, onSelect, effectiveCrossSection, effectiveHideOthers }) {
+  const show = (id) => !effectiveHideOthers || id === selected || id === 'membrane'
+  return (
+    <group scale={1.4} rotation={[-0.15, -0.5, 0]}>
+      <ClickableGroup id="membrane" onSelect={onSelect}>
+        {/* 主厂房 */}
+        <mesh position={[0, 0, 0]}>
+          <boxGeometry args={[2.6, 1.2, 1.4]} />
+          <meshStandardMaterial color="#c8c8c0" roughness={0.7} />
+        </mesh>
+        {/* 锯齿形屋顶 */}
+        {[0.7, -0.2, -1.1].map((x, i) => (
+          <mesh key={i} position={[x, 0.75, 0]} rotation={[0, 0, 0.2 * (i % 2 ? 1 : -1)]}>
+            <boxGeometry args={[0.9, 0.08, 1.42]} />
+            <meshStandardMaterial color="#7a9a8a" roughness={0.5} />
+          </mesh>
+        ))}
+        {/* 大门 */}
+        <mesh position={[0, -0.2, 0.71]}>
+          <boxGeometry args={[0.7, 0.7, 0.02]} />
+          <meshStandardMaterial color="#5a7a6a" roughness={0.3} metalness={0.2} />
+        </mesh>
+        {/* 排风管 */}
+        {[[-0.8, 1.0, 0.3], [0.8, 1.0, -0.3]].map((pos, i) => (
+          <mesh key={i} position={pos}>
+            <cylinderGeometry args={[0.08, 0.08, 0.4, 8]} />
+            <meshStandardMaterial color="#8a8a8a" roughness={0.4} metalness={0.4} />
+          </mesh>
+        ))}
+      </ClickableGroup>
+      {show('nucleus') && (
+        <ClickableGroup id="nucleus" onSelect={onSelect}>
+          <mesh position={[0, -0.85, 0]}>
+            <boxGeometry args={[2.8, 0.25, 1.6]} />
+            <meshStandardMaterial color="#606060" roughness={0.9} emissive={selected === 'nucleus' ? '#4c1d95' : '#000'} emissiveIntensity={selected === 'nucleus' ? 0.2 : 0} />
+          </mesh>
+        </ClickableGroup>
+      )}
+      {show('lysosome') && (
+        <ClickableGroup id="lysosome" onSelect={onSelect}>
+          {[[-1.0, 0, 0.55], [1.0, 0, 0.55], [-1.0, 0, -0.55], [1.0, 0, -0.55], [0, 0, 0.55], [0, 0, -0.55]].map((pos, i) => (
+            <mesh key={i} position={pos}>
+              <cylinderGeometry args={[0.05, 0.05, 1.2, 8]} />
+              <meshStandardMaterial color="#6a6a6a" emissive={selected === 'lysosome' ? '#8d58b8' : '#374151'} emissiveIntensity={selected === 'lysosome' ? 0.3 : 0.05} roughness={0.4} metalness={0.4} />
+            </mesh>
+          ))}
+          {/* 吊车梁 */}
+          <mesh position={[0, 0.4, 0]}>
+            <boxGeometry args={[2.4, 0.06, 0.12]} />
+            <meshStandardMaterial color="#7a7a7a" roughness={0.5} />
+          </mesh>
+        </ClickableGroup>
+      )}
+      {show('mitochondria') && (
+        <ClickableGroup id="mitochondria" onSelect={onSelect}>
+          <mesh position={[0, 0, 0.72]}>
+            <boxGeometry args={[2.56, 1.16, 0.05]} />
+            <meshStandardMaterial color="#b0c8b0" transparent opacity={0.6} emissive="#2d6a4f" emissiveIntensity={selected === 'mitochondria' ? 0.2 : 0.05} roughness={0.4} />
+          </mesh>
+        </ClickableGroup>
+      )}
+      {show('granules') && (
+        <ClickableGroup id="granules" onSelect={onSelect}>
+          {/* 行车 */}
+          <mesh position={[0, 0.5, 0.3]}>
+            <boxGeometry args={[2.2, 0.04, 0.08]} />
+            <meshStandardMaterial color="#f0c040" roughness={0.3} metalness={0.5} />
+          </mesh>
+        </ClickableGroup>
+      )}
+    </group>
+  )
+}
+
+function EducationalBuilding({ selected, onSelect, effectiveCrossSection, effectiveHideOthers }) {
+  const show = (id) => !effectiveHideOthers || id === selected || id === 'membrane'
+  return (
+    <group scale={1.5} rotation={[-0.15, -0.5, 0]}>
+      <ClickableGroup id="membrane" onSelect={onSelect}>
+        {/* 教学楼主体 */}
+        <mesh position={[0, 0, 0]}>
+          <boxGeometry args={[2.0, 1.4, 1.0]} />
+          <meshStandardMaterial color="#f0e8d8" roughness={0.7} />
+        </mesh>
+        {/* 走廊连接体 */}
+        <mesh position={[0.8, -0.1, 0.6]}>
+          <boxGeometry args={[0.5, 1.2, 0.35]} />
+          <meshStandardMaterial color="#e0d8c8" roughness={0.7} />
+        </mesh>
+        {/* 标准教室窗 */}
+        {[-0.5, 0.5].map((x, i) => (
+          <mesh key={i} position={[x, 0.1, 0.51]}>
+            <boxGeometry args={[0.4, 0.35, 0.02]} />
+            <meshPhysicalMaterial color="#87ceeb" roughness={0.05} transmission={0.4} transparent opacity={0.6} />
+          </mesh>
+        ))}
+        {[-0.5, 0.5].map((x, i) => (
+          <mesh key={i+10} position={[x, -0.4, 0.51]}>
+            <boxGeometry args={[0.4, 0.35, 0.02]} />
+            <meshPhysicalMaterial color="#87ceeb" roughness={0.05} transmission={0.4} transparent opacity={0.6} />
+          </mesh>
+        ))}
+        {/* 入口 */}
+        <mesh position={[0, -0.55, 0.51]}>
+          <boxGeometry args={[0.35, 0.4, 0.02]} />
+          <meshStandardMaterial color="#6a8a5a" roughness={0.4} />
+        </mesh>
+      </ClickableGroup>
+      {show('nucleus') && (
+        <ClickableGroup id="nucleus" onSelect={onSelect}>
+          <mesh position={[0, -0.95, 0]}>
+            <boxGeometry args={[2.2, 0.25, 1.2]} />
+            <meshStandardMaterial color="#707070" roughness={0.85} emissive={selected === 'nucleus' ? '#4c1d95' : '#000'} emissiveIntensity={selected === 'nucleus' ? 0.2 : 0} />
+          </mesh>
+        </ClickableGroup>
+      )}
+      {show('lysosome') && (
+        <ClickableGroup id="lysosome" onSelect={onSelect}>
+          {[[-0.7, 0, 0.4], [0.7, 0, 0.4], [-0.7, 0, -0.4], [0.7, 0, -0.4], [0, 0, 0.4], [0, 0, -0.4]].map((pos, i) => (
+            <mesh key={i} position={pos}>
+              <cylinderGeometry args={[0.04, 0.04, 1.4, 8]} />
+              <meshStandardMaterial color="#6a7a6a" emissive={selected === 'lysosome' ? '#8d58b8' : '#374151'} emissiveIntensity={selected === 'lysosome' ? 0.3 : 0.05} roughness={0.5} metalness={0.3} />
+            </mesh>
+          ))}
+        </ClickableGroup>
+      )}
+      {show('mitochondria') && (
+        <ClickableGroup id="mitochondria" onSelect={onSelect}>
+          <mesh position={[0, 0, 0.52]}>
+            <boxGeometry args={[1.96, 1.36, 0.04]} />
+            <meshStandardMaterial color="#c8d8a8" transparent opacity={0.6} emissive="#4a8a2a" emissiveIntensity={selected === 'mitochondria' ? 0.2 : 0.05} roughness={0.4} />
+          </mesh>
+        </ClickableGroup>
+      )}
+      {show('granules') && (
+        <ClickableGroup id="granules" onSelect={onSelect}>
+          <mesh position={[0, 0.82, 0]}>
+            <boxGeometry args={[1.8, 0.06, 0.8]} />
+            <meshStandardMaterial color="#a0a090" roughness={0.5} />
+          </mesh>
+        </ClickableGroup>
+      )}
+    </group>
+  )
+}
+
+function MedicalBuilding({ selected, onSelect, effectiveCrossSection, effectiveHideOthers }) {
+  const show = (id) => !effectiveHideOthers || id === selected || id === 'membrane'
+  return (
+    <group scale={1.4} rotation={[-0.15, -0.5, 0]}>
+      <ClickableGroup id="membrane" onSelect={onSelect}>
+        {/* 主楼 */}
+        <mesh position={[0, 0.2, 0]}>
+          <boxGeometry args={[1.6, 1.8, 1.2]} />
+          <meshStandardMaterial color="#e8e0e8" roughness={0.5} />
+        </mesh>
+        {/* 左翼 */}
+        <mesh position={[-1.1, -0.2, 0]}>
+          <boxGeometry args={[0.7, 1.2, 1.0]} />
+          <meshStandardMaterial color="#e0d8e8" roughness={0.5} />
+        </mesh>
+        {/* 右翼 */}
+        <mesh position={[1.1, -0.2, 0]}>
+          <boxGeometry args={[0.7, 1.2, 1.0]} />
+          <meshStandardMaterial color="#e0d8e8" roughness={0.5} />
+        </mesh>
+        {/* 红十字标志 */}
+        <mesh position={[0, 0.5, 0.61]}>
+          <boxGeometry args={[0.3, 0.06, 0.01]} />
+          <meshStandardMaterial color="#dc2626" emissive="#dc2626" emissiveIntensity={0.3} />
+        </mesh>
+        <mesh position={[0, 0.5, 0.61]}>
+          <boxGeometry args={[0.06, 0.3, 0.01]} />
+          <meshStandardMaterial color="#dc2626" emissive="#dc2626" emissiveIntensity={0.3} />
+        </mesh>
+        {/* 入口 */}
+        <mesh position={[0, -0.55, 0.61]}>
+          <boxGeometry args={[0.5, 0.45, 0.02]} />
+          <meshPhysicalMaterial color="#5a8ab5" roughness={0.1} transmission={0.4} transparent opacity={0.6} />
+        </mesh>
+      </ClickableGroup>
+      {show('nucleus') && (
+        <ClickableGroup id="nucleus" onSelect={onSelect}>
+          <mesh position={[0, -1.1, 0]}>
+            <boxGeometry args={[2.6, 0.25, 1.4]} />
+            <meshStandardMaterial color="#686868" roughness={0.85} emissive={selected === 'nucleus' ? '#4c1d95' : '#000'} emissiveIntensity={selected === 'nucleus' ? 0.2 : 0} />
+          </mesh>
+        </ClickableGroup>
+      )}
+      {show('lysosome') && (
+        <ClickableGroup id="lysosome" onSelect={onSelect}>
+          {[[-0.5, 0.2, 0.45], [0.5, 0.2, 0.45], [-0.5, 0.2, -0.45], [0.5, 0.2, -0.45], [0, 0.2, 0.45], [0, 0.2, -0.45]].map((pos, i) => (
+            <mesh key={i} position={pos}>
+              <cylinderGeometry args={[0.04, 0.04, 1.8, 8]} />
+              <meshStandardMaterial color="#7a7a8a" emissive={selected === 'lysosome' ? '#8d58b8' : '#374151'} emissiveIntensity={selected === 'lysosome' ? 0.3 : 0.05} roughness={0.4} metalness={0.4} />
+            </mesh>
+          ))}
+        </ClickableGroup>
+      )}
+      {show('mitochondria') && (
+        <ClickableGroup id="mitochondria" onSelect={onSelect}>
+          <mesh position={[0, 0.2, 0.62]}>
+            <boxGeometry args={[1.56, 1.76, 0.04]} />
+            <meshStandardMaterial color="#d0c0d8" transparent opacity={0.5} emissive="#7c3aed" emissiveIntensity={selected === 'mitochondria' ? 0.2 : 0.05} roughness={0.3} />
+          </mesh>
+        </ClickableGroup>
+      )}
+      {show('granules') && (
+        <ClickableGroup id="granules" onSelect={onSelect}>
+          {/* 屋顶设备 */}
+          <mesh position={[-0.3, 1.25, 0]}>
+            <cylinderGeometry args={[0.08, 0.08, 0.2, 8]} />
+            <meshStandardMaterial color="#a0a0a0" roughness={0.4} metalness={0.4} />
+          </mesh>
+          <mesh position={[0.3, 1.25, 0]}>
+            <cylinderGeometry args={[0.06, 0.06, 0.2, 8]} />
+            <meshStandardMaterial color="#a0a0a0" roughness={0.4} metalness={0.4} />
+          </mesh>
+        </ClickableGroup>
+      )}
+    </group>
+  )
+}
+
+// ===== Main CellModel - routes to building-specific model =====
+function CellModel({ cellId, selected, crossSection, onSelect, hideOthers, proofMode, viewMode = 'layers' }) {
+  const focusMode = viewMode === 'focus'
+  const effectiveHideOthers = hideOthers || focusMode
+  const effectiveCrossSection = crossSection || viewMode === 'layers'
+
+  const props = { selected, onSelect, effectiveCrossSection, effectiveHideOthers }
+
+  switch (cellId) {
+    case 'residential': return <ResidentialBuilding {...props} />
+    case 'commercial': return <CommercialBuilding {...props} />
+    case 'office': return <OfficeBuilding {...props} />
+    case 'cultural': return <CulturalBuilding {...props} />
+    case 'industrial': return <IndustrialBuilding {...props} />
+    case 'educational': return <EducationalBuilding {...props} />
+    case 'medical': return <MedicalBuilding {...props} />
+    default: return <ResidentialBuilding {...props} />
+  }
 }
 
 function SceneExportBridge({ exportRoot, onExporterReady }) {
