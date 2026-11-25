@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f2a44">
+<title>工程沙盘虚拟仿真系统 · 安徽工业大学 建筑工程学院</title>
+<style>
+:root{--bg:#0f2a44;--ink:#14212e;--muted:#5d6b78;--line:#dfe5ea;--acc:#0ea5e9;--warn:#e11d48;--fs:clamp(14px,1.05vw,18px);--hdr:clamp(50px,5.6vh,64px);--side:clamp(290px,25vw,440px);--rp:min(420px,40vw);--tw:64px}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;font-family:"Noto Sans CJK SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;font-size:var(--fs);color:var(--ink);background:#e9edf0;-webkit-tap-highlight-color:transparent}
+button{font:inherit;cursor:pointer}
+.ico{width:1.25em;height:1.25em;flex-shrink:0;display:block}
+/* ---------- 顶栏 ---------- */
+header{position:fixed;inset:0 0 auto 0;height:var(--hdr);display:flex;align-items:center;gap:.55em;padding:0 max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left));background:var(--bg);color:#fff;z-index:30;box-shadow:0 2px 10px rgba(0,0,0,.2)}
+header h1{font-size:clamp(15px,1.25vw,23px);margin:0 .3em 0 0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex-shrink:1}
+header h1 small{font-weight:400;opacity:.7;margin-left:.5em;font-size:.72em}
+.hbtn{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.22);border-radius:10px;padding:.4em .75em;min-height:40px;display:inline-flex;align-items:center;gap:.4em;white-space:nowrap;flex-shrink:0}
+.hbtn:hover{background:rgba(255,255,255,.22)}.hbtn.ic{padding:.4em .55em;min-width:40px;justify-content:center}
+.grow{flex:1;min-width:0}
+#modeTabs{display:flex;gap:4px;background:rgba(255,255,255,.07);border-radius:12px;padding:3px;flex-shrink:0}
+.mtab{display:flex;align-items:center;gap:.4em;border:0;background:none;color:#bcd3ea;border-radius:9px;padding:.38em .8em;min-height:40px;white-space:nowrap}
+.mtab b{font-size:.78em;opacity:.8;font-weight:600}
+.mtab:hover{background:rgba(255,255,255,.1);color:#fff}.mtab.on{background:#0ea5e9;color:#fff;font-weight:600;box-shadow:0 2px 8px rgba(14,165,233,.45)}
+.mtab.on b{opacity:1}
+body.mode-ws .ws-exit{display:none!important}#wsBack{display:none}body.mode-ws #wsBack{display:inline-flex;background:#8b5cf6;border-color:#8b5cf6}
+.tagsim{font-size:.7em;background:#f59e0b;color:#1b1300;border-radius:5px;padding:.1em .45em;white-space:nowrap;flex-shrink:0}
+.prog{display:flex;flex-direction:column;gap:3px;min-width:4.6em;font-size:.78em;line-height:1.1}
+.prog .bar{height:4px;background:rgba(255,255,255,.2);border-radius:3px;overflow:hidden}
+.prog .bar i{display:block;height:100%;width:0;background:#22d3ee;transition:width .4s}
+#rotateBtn{display:none}
+/* ---------- 模型与点位 ---------- */
+#stage{position:fixed;inset:var(--hdr) 0 0 0}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none}
+#markers{position:fixed;inset:var(--hdr) 0 0 0;pointer-events:none;overflow:hidden;z-index:5}
+body.mode-ws #stage,body.mode-ws #markers{visibility:hidden}
+.marker{position:absolute;left:0;top:0;pointer-events:auto;border:0;background:none;padding:0;display:flex;align-items:center;gap:.3em;margin:-14px 0 0 -14px;outline:none}
+.marker .dot{width:28px;height:28px;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center;border:2px solid #fff;box-shadow:0 2px 7px rgba(0,0,0,.35);position:relative;transition:transform .15s}
+.marker .dot .ico{width:16px;height:16px}
+.marker .lbl{background:rgba(15,42,68,.92);color:#fff;font-size:13px;padding:.22em .6em;border-radius:6px;white-space:nowrap;opacity:0;transition:opacity .15s;pointer-events:none}
+.marker .lbl em{font-style:normal;opacity:.65;margin-right:.35em;font-size:.9em}
+.marker:hover,.marker:focus-visible,.marker.active{z-index:2000!important}
+.marker:hover .lbl,.marker:focus-visible .lbl,.marker.active .lbl{opacity:1}
+.marker:hover .dot,.marker:focus-visible .dot{transform:scale(1.15)}
+.marker.learned .dot::after{content:"✓";position:absolute;right:-6px;top:-6px;font-size:10px;line-height:1;background:#16a34a;border-radius:50%;width:14px;height:14px;display:grid;place-items:center;border:1.5px solid #fff}
+.marker.active .dot{transform:scale(1.25);box-shadow:0 0 0 6px rgba(14,165,233,.35)}
+.marker.alarm .dot{background:var(--warn);animation:pulse .6s infinite alternate}
+.marker.dim{opacity:.4}.marker.dim:hover{opacity:1}
+@keyframes pulse{to{box-shadow:0 0 0 12px rgba(225,29,72,.25);transform:scale(1.3)}}
+/* ---------- 左：学习面板 ---------- */
+#side{position:fixed;left:12px;top:calc(var(--hdr) + 12px);bottom:calc(12px + env(safe-area-inset-bottom));width:var(--side);background:rgba(255,255,255,.97);border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,.18);z-index:15;display:flex;flex-direction:column;transition:transform .25s;overflow:hidden}
+body.mode-build #side{bottom:calc(84px + env(safe-area-inset-bottom))}
+body.side-min #side{transform:translateX(calc(-100% - 24px))}
+body.mode-ws #side,body.mode-ws #sideOpen,body.walking #side,body.walking #sideOpen{display:none!important}
+.sideh{display:flex;align-items:center;gap:.5em;background:#0f2a44;color:#fff;padding:.55em .6em .55em 1em;flex-shrink:0}
+.sideh b{flex:1;font-size:1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sideh button{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:8px;min-width:36px;height:34px;display:grid;place-items:center}
+.sideb{overflow:auto;flex:1;min-height:0;overscroll-behavior:contain}
+.sideb>section{display:none}
+body.mode-site #sideSite,body.mode-build #stageCard,body.mode-ops #sideOps,body.mode-ops #stageCard{display:block}
+body.proc-on #stageCard{display:none!important}
+#sideOpen{position:fixed;left:0;top:calc(var(--hdr) + 12px);z-index:15;border:0;background:#0f2a44;color:#fff;border-radius:0 12px 12px 0;padding:.6em .8em .6em .6em;display:none;align-items:center;gap:.4em;box-shadow:0 4px 14px rgba(0,0,0,.25);min-height:44px}
+body.side-min #sideOpen{display:flex}
+.sintro{padding:12px 16px 4px;line-height:1.6}.sintro p{margin:0 0 .5em}
+.pcat{padding:2px 12px 10px}
+.pcat h4{display:flex;align-items:center;gap:.5em;margin:.7em 4px .3em;font-size:.92em;color:#0f4c75}
+.pcat h4 i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:#fff}.pcat h4 i .ico{width:13px;height:13px}
+.pcat h4 small{margin-left:auto;color:var(--muted);font-weight:400}
+.pitem{display:flex;gap:.6em;align-items:center;width:100%;border:0;background:none;padding:.42em .4em;text-align:left;border-radius:8px;color:var(--ink);min-height:40px;line-height:1.35}
+.pitem i{font-style:normal;color:#fff;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex-shrink:0}.pitem i .ico{width:14px;height:14px}
+.pitem span{flex:1}.pitem em{font-style:normal;font-size:.75em;color:var(--muted)}
+.pitem.learned em::after{content:" ✓";color:#16a34a}
+.pitem:hover{background:#f0f7fc}.pitem.on{background:#e0f2fe}
+.sbar{display:flex;flex-wrap:wrap;gap:6px;padding:12px 14px 4px}
+.sbtn{border:1px solid var(--line);background:#f6f8fa;border-radius:10px;padding:.42em .75em;min-height:38px;color:var(--ink);display:inline-flex;align-items:center;gap:.35em}
+.sbtn:hover{border-color:var(--acc)}.sbtn.on{background:#14b8a6;border-color:#14b8a6;color:#fff}.sbtn.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+.ssub{margin:.9em 16px .2em;font-size:.82em;color:var(--muted);letter-spacing:.05em}
+/* 阶段说明（模式②③） */
+.scb{padding:4px 16px 14px}.sch{display:flex;align-items:baseline;gap:.6em;margin:.6em 0;flex-wrap:wrap}.sch b{font-size:1.3em}.sch span{color:var(--muted)}
+.scb h4{margin:.8em 0 .3em;color:#0f4c75;font-size:.95em}.scb ol,.scb ul{margin:0;padding-left:1.3em;line-height:1.6}
+.norms{font-size:.82em;color:var(--muted);line-height:1.7}.norms span{display:inline-block;background:#eef4f8;border-radius:5px;padding:0 .4em;margin:0 .3em .2em 0}
+.spts{display:flex;flex-wrap:wrap;gap:6px;margin-top:.4em}.spts button{border:0;background:var(--c);color:#fff;border-radius:8px;padding:.35em .6em;font-size:.85em;min-height:34px}
+.think{background:#ecfeff;border-left:3px solid #14b8a6;padding:.5em .7em;font-size:.92em;margin-top:.8em}
+.wsl{display:inline-flex;flex-wrap:wrap;gap:4px;align-items:center;margin:.15em 0 .1em .2em;vertical-align:middle}
+.wsl button{border:1px solid #c4b5fd;background:#f5f3ff;color:#6d28d9;border-radius:999px;padding:.05em .6em;font-size:.78em;min-height:26px;white-space:nowrap}
+.wsl button:hover{background:#8b5cf6;color:#fff}
+/* ---------- 点位说明卡（右） ---------- */
+#panel{position:fixed;top:calc(var(--hdr) + 12px);right:12px;bottom:12px;width:var(--rp);background:#fff;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.22);z-index:20;transform:translateX(110%);transition:transform .28s;display:flex;flex-direction:column}
+#panel.open{transform:none}
+#panel .pbody{overflow:auto;padding:18px 20px 22px}
+#panel h2{margin:.25em 0 .2em;font-size:1.4em;padding-right:1.8em}
+#panel h3{font-size:1em;margin:1em 0 .35em;color:#0f4c75}
+#panel p,#panel li{line-height:1.65}
+#panel ul{margin:.2em 0;padding-left:1.25em}
+.ptag{display:inline-block;background:var(--c);color:#fff;font-size:.8em;padding:.2em .6em;border-radius:6px}
+.sign{color:var(--muted);margin:.2em 0}
+.verify{background:#fde68a;color:#7c4a00;font-size:.75em;padding:.1em .45em;border-radius:5px}
+.note{background:#fff7e6;border-left:3px solid #f59e0b;padding:.5em .7em;font-size:.9em}
+.muted{color:var(--muted)}.small{font-size:.85em}
+.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:.6em 0}
+.photos figure{margin:0}.photos img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;cursor:zoom-in;background:#eee}
+.photos figcaption{font-size:.72em;color:var(--muted);text-align:center}
+.pact{display:flex;gap:8px;margin-top:1em;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:#f6f8fa;border-radius:10px;padding:.55em .7em;min-height:42px;text-align:left;color:var(--ink)}
+.btn:hover{border-color:var(--acc)}.btn.primary{background:var(--acc);color:#fff;border-color:var(--acc)}
+.x{position:absolute;right:10px;top:10px;border:0;background:#eef2f5;border-radius:50%;width:38px;height:38px;font-size:18px;z-index:2}
+/* ---------- 右缘「数据」开关 ---------- */
+#dataBtn{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:16;border:0;background:#0f2a44;color:#fff;border-radius:12px 0 0 12px;padding:.8em .55em;display:flex;flex-direction:column;align-items:center;gap:.4em;box-shadow:-3px 4px 14px rgba(0,0,0,.25);writing-mode:vertical-rl;letter-spacing:.2em;font-weight:600}
+#dataBtn .ico{writing-mode:horizontal-tb}
+#dataBtn:hover{background:#0ea5e9}
+body.panel-open #dataBtn{right:calc(var(--rp) + 24px);border-radius:12px}
+body.split #dataBtn,body.mode-ws #dataBtn,body.walking #dataBtn{display:none}
+/* ---------- 右下工具条 ---------- */
+#tools{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:16;display:flex;flex-direction:column;gap:6px;background:rgba(15,42,68,.9);padding:6px;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+#tools>button{border:0;background:none;color:#dbeafe;border-radius:10px;width:var(--tw);min-height:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:.75em;padding:4px 2px}
+#tools>button:hover{background:rgba(255,255,255,.12)}#tools>button.on{background:#0ea5e9;color:#fff}
+body.panel-open #tools{right:calc(var(--rp) + 24px)}
+body.split #tools{right:calc(100% - var(--sp,50%) + 12px)}
+body.split.panel-open #tools{right:calc(100% - var(--sp,50%) + min(380px,24vw) + 24px)}
+body.mode-ws #tools,body.walking #tools{display:none}
+.pop{position:fixed;z-index:26;background:#fff;border-radius:14px;box-shadow:0 10px 34px rgba(0,0,0,.25);padding:12px 14px;width:min(280px,calc(100vw - 110px));max-height:calc(100vh - var(--hdr) - 24px);overflow:auto;display:none}
+.pop.open{display:block}
+.pop h4{margin:.1em 0 .5em;font-size:.95em;color:#0f4c75}
+.pop h5{margin:.8em 0 .3em;font-size:.82em;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.grid2 .btn{min-height:40px}
+.chk{display:flex;align-items:center;gap:.5em;padding:.3em 0;cursor:pointer;line-height:1.35}
+.chk input{width:18px;height:18px;accent-color:var(--acc);flex-shrink:0}
+.chk i{width:12px;height:12px;border-radius:50%;display:inline-block;flex-shrink:0}
+/* ---------- 漫游条 / 参观条 / 提示 ---------- */
+.bar-float{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(15,42,68,.92);color:#fff;border-radius:14px;padding:8px 10px;display:none;gap:8px;align-items:center;z-index:22;box-shadow:0 6px 20px rgba(0,0,0,.3);white-space:nowrap}
+.bar-float .hbtn{min-height:38px}
+body.walking #walkBar{display:flex}
+body.touring #tourBar{display:flex}
+body.touring.panel-open #tourBar{left:calc((100% - var(--rp) - 24px)/2)}
+#toast{position:fixed;left:50%;top:calc(var(--hdr) + 14px);transform:translate(-50%,-20px);opacity:0;background:#0f2a44;color:#fff;padding:.7em 1.1em;border-radius:12px;z-index:70;transition:.25s;max-width:min(92vw,720px);pointer-events:none}
+#toast.show{opacity:1;transform:translate(-50%,0)}#toast.alarm{background:var(--warn)}
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;place-items:center;z-index:75;cursor:zoom-out}
+#lightbox.open{display:grid}#lightbox img{max-width:96vw;max-height:92vh;border-radius:8px}
+/* ---------- 时间轴（模式②） ---------- */
+#timeline{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom));z-index:12;display:none;align-items:center;gap:6px;background:rgba(15,42,68,.92);padding:6px 8px;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:calc(100vw - 2 * (var(--tw) + 36px))}
+body.mode-build #timeline{display:flex}
+body.walking #timeline,body.touring #timeline{display:none!important}
+#tlChips{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;min-width:0;flex:1}
+.chip{display:flex;align-items:center;gap:.35em;border:0;border-radius:10px;padding:.45em .7em;min-height:40px;background:rgba(255,255,255,.1);color:#dbeafe;white-space:nowrap;font-size:.92em}
+.chip i{font-style:normal;background:rgba(255,255,255,.18);border-radius:50%;width:1.6em;height:1.6em;display:grid;place-items:center;font-size:.85em;flex-shrink:0}
+.chip.on{background:#0ea5e9;color:#fff}
+#tlPts{border:1px solid rgba(255,255,255,.25);background:none;color:#dbeafe;border-radius:10px;min-height:40px;padding:.3em .6em;display:flex;align-items:center;gap:.3em;white-space:nowrap}
+#tlPts.on{background:#14b8a6;border-color:#14b8a6;color:#fff}
+body.split #timeline{left:calc(var(--sp,50%) / 2);max-width:calc(var(--sp,50%) - 2 * (var(--tw) + 30px))}
+/* 工序动画条（在学习面板里） */
+#procBar{display:none;padding:10px 14px 12px}
+body.proc-on #procBar{display:block}
+#procBar .ph{display:flex;align-items:center;gap:6px;flex-wrap:wrap}#procBar .ph b{white-space:nowrap;color:#0f4c75}
+#procBar .pp{flex:1;height:6px;background:#e6edf2;border-radius:3px;overflow:hidden;min-width:40px}#procBar .pp i{display:block;height:100%;background:#f59e0b}
+#procBar .ph button,#procBar .ph select{border:1px solid var(--line);background:#f6f8fa;border-radius:8px;min-width:36px;height:34px;font-size:.95em}
+#procBar h3{margin:.45em 0 .2em;font-size:1.2em}#procBar p{margin:.2em 0;line-height:1.6}#procBar .pk{background:#fff7e6;border-left:3px solid #f59e0b;padding:.3em .6em}#procBar .pn{color:var(--muted);font-size:.85em}
+#procBar .plist{display:none;margin:.5em 0 0;padding-left:1.4em;font-size:.88em}#procBar.showlist .plist{display:block}#procBar .plist li{cursor:pointer;padding:.1em 0}#procBar .plist li.on{color:#d97706;font-weight:700}#procBar .plist li.done{color:#94a3b8}
+/* ---------- 数据面板（并列） ---------- */
+body.split #stage,body.split #markers{right:calc(100% - var(--sp,50%))}
+body.split #dash{display:block;left:var(--sp,50%);top:var(--hdr);border-left:2px solid #0ea5e9}
+#splitHandle{display:none;position:fixed;top:var(--hdr);bottom:0;left:calc(var(--sp,50%) - 7px);width:14px;cursor:col-resize;z-index:61;touch-action:none}
+#splitHandle::after{content:"";position:absolute;left:4px;top:50%;width:6px;height:60px;margin-top:-30px;border-radius:3px;background:#0ea5e9}
+body.split:not(.split-v) #splitHandle{display:block}
+body.split #panel{right:calc(100% - var(--sp,50%) + 12px);width:min(380px,24vw)}
+body.split #side{width:min(var(--side),21vw)}
+body.split-v #stage,body.split-v #markers{right:0;bottom:50%}
+body.split-v #dash{left:0;top:50%}
+body.split-v #timeline{left:50%;bottom:calc(50% + 8px);max-width:calc(100vw - 24px)}
+body.split-v #tools{right:12px;bottom:auto;top:calc(var(--hdr) + 8px);flex-direction:row}body.split-v #tools>button{min-height:40px}
+body.split-v #side{bottom:calc(50% + 8px)}
+/* ---------- 构件工坊（模式④） ---------- */
+#wsHost{position:fixed;inset:var(--hdr) 0 0 0;z-index:8;display:none;overflow:hidden;background:#e9eef3}
+body.mode-ws #wsHost{display:block}
+/* ---------- 首页 ---------- */
+#home{position:fixed;inset:0;z-index:80;display:none;overflow:auto;background:linear-gradient(180deg,rgba(9,26,46,.97),rgba(12,40,68,.92) 60%,rgba(12,40,68,.86));-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);color:#fff;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+body.home-on #home{display:block}
+.hwrap{max-width:1360px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;justify-content:center;gap:clamp(14px,3vh,34px);padding:clamp(8px,3vh,40px) 0}
+.htop{text-align:center}
+.htop .sch2{display:inline-block;font-size:clamp(13px,1.1vw,18px);color:#93c5fd;letter-spacing:.12em;margin-bottom:.4em}
+.htop h2{margin:0;font-size:clamp(26px,3.4vw,58px);letter-spacing:.06em;line-height:1.2}
+.htop p{margin:.6em auto 0;max-width:46em;text-wrap:balance;color:#cfe3f7;line-height:1.6;font-size:clamp(14px,1.1vw,19px)}
+.hcards{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(10px,1.4vw,22px)}
+.hcard{position:relative;text-align:left;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;border-radius:18px;padding:clamp(14px,1.6vw,26px);display:flex;flex-direction:column;gap:.55em;transition:transform .15s,background .15s,border-color .15s;min-height:clamp(150px,26vh,280px)}
+.hcard:hover,.hcard:focus-visible{background:rgba(255,255,255,.15);border-color:#38bdf8;transform:translateY(-3px);outline:none}
+.hcard .hi{width:clamp(44px,3.6vw,64px);height:clamp(44px,3.6vw,64px);border-radius:14px;display:grid;place-items:center;background:var(--c)}
+.hcard .hi .ico{width:58%;height:58%}
+.hcard h3{margin:.2em 0 0;font-size:clamp(18px,1.6vw,28px);display:flex;align-items:baseline;gap:.4em}
+.hcard h3 small{font-size:.55em;opacity:.7;font-weight:400}
+.hcard p{margin:0;color:#cfe3f7;line-height:1.6;font-size:clamp(13px,.98vw,17px)}
+.hcard .go{margin-top:auto;color:#7dd3fc;font-size:.9em}
+.hacts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.hbig{border:0;border-radius:999px;padding:.7em 1.5em;min-height:48px;font-weight:700;display:inline-flex;align-items:center;gap:.5em;font-size:clamp(14px,1.05vw,18px)}
+.hbig.pri{background:#f59e0b;color:#1b1300}.hbig.sec{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3)}
+.hbig small{font-weight:400;opacity:.8}
+.hfoot{text-align:center;color:#93a8bf;font-size:.8em}
+/* ---------- 手机竖屏 ---------- */
+@media (max-width:700px){
+  :root{--rp:100vw;--tw:52px}
+  header{gap:.35em}header h1,.tagsim,.hide-s{display:none}
+  header{padding-left:8px;padding-right:8px}.hbtn{padding:.35em .5em}.hbtn.ic{min-width:36px;padding:.35em .4em}
+  #modeTabs{flex:0 1 auto;gap:2px;padding:2px}.mtab{padding:.3em .45em}.mtab span,.mtab b{display:none}
+  body.mode-ws #rotateBtn{display:none!important}
+  .prog{display:none}
+  #panel{left:0;right:0;bottom:0;top:auto;width:auto;max-height:62vh;border-radius:16px 16px 0 0;transform:translateY(105%)}
+  body.panel-open #tools,body.panel-open #dataBtn{display:none}
+  #side{left:0;top:var(--hdr);bottom:0!important;width:min(360px,88vw);border-radius:0 16px 16px 0}
+  .marker .lbl{font-size:12px}
+  #timeline{max-width:calc(100vw - var(--tw) - 40px);left:calc(50% - (var(--tw) + 16px) / 2)}
+  .chip span{display:none}.chip.on span{display:inline}#tlPts span,#tlPlay .plt{display:none}#tlPts,#tlPlay{padding:.3em .55em}
+  #tools>button{min-height:44px}#tools>button span{display:none}
+  .hcards{grid-template-columns:1fr 1fr}.hcard{min-height:0}.hcard p{font-size:12.5px;line-height:1.45}.hcard .go{display:none}
+}
+@media (orientation:portrait) and (max-width:700px){#rotateBtn{display:inline-flex}}
+@media (max-width:1100px) and (min-width:701px){.hcards{grid-template-columns:1fr 1fr}.mtab span{font-size:.92em}}
+/* ---------- 手机横屏 ---------- */
+@media (orientation:landscape) and (max-height:500px){
+  :root{--hdr:44px;--fs:13px;--rp:min(360px,46vw);--tw:46px}
+  header h1 small,.prog,.tagsim{display:none}
+  header h1{font-size:14px}
+  .hbtn{min-height:34px;padding:.25em .55em}.hbtn.ic{min-width:34px}
+  .mtab{min-height:34px;padding:.2em .55em}.mtab span,.mtab b{display:none}
+  #panel{top:calc(var(--hdr) + 6px);bottom:6px;right:6px}
+  body.panel-open #tools,body.panel-open #dataBtn{right:calc(var(--rp) + 12px)}
+  .marker .dot{width:24px;height:24px}.marker .dot .ico{width:13px;height:13px}.marker{margin:-12px 0 0 -12px}
+  #side{left:0;top:var(--hdr);bottom:0!important;width:min(330px,46vw);border-radius:0 14px 14px 0}
+  #sideOpen{top:calc(var(--hdr) + 6px);min-height:36px;padding:.3em .6em .3em .4em}
+  #timeline{bottom:4px;padding:3px 5px}.chip{min-height:32px;padding:.2em .45em}.chip span{display:none}.chip.on span{display:inline}#tlPts{min-height:32px}#tlPts span{display:none}
+  #tools{right:6px;bottom:6px;padding:4px;gap:3px}#tools>button{min-height:38px;font-size:10px}#tools>button span{display:none}
+  #dataBtn{padding:.5em .35em;top:calc(var(--hdr) + 8px);transform:none;letter-spacing:.1em}
+  body.split #stage,body.split #markers{right:0}
+  body.split #dash{left:16vw;box-shadow:-10px 0 30px rgba(0,0,0,.45)}
+  body.split #splitHandle{display:none!important}
+  body.split #tools{right:calc(84vw + 6px)}
+  body.split #timeline{display:none!important}
+  .photos{grid-template-columns:repeat(3,1fr)}
+  .hwrap{gap:10px;padding:0}.htop h2{font-size:22px}.htop p{display:none}.htop .sch2{margin:0;font-size:12px}
+  .hcards{grid-template-columns:repeat(4,1fr);gap:8px}.hcard{min-height:0;padding:10px 12px;gap:.3em;border-radius:14px}.hcard p{font-size:11.5px;line-height:1.4}.hcard h3{font-size:16px}.hcard .hi{width:34px;height:34px;border-radius:10px}.hcard .go{display:none}
+  .hbig{min-height:38px;padding:.4em 1.1em}
+}
+/* ---------- 投影大屏 ---------- */
+@media (min-width:1800px){:root{--fs:19px}.marker .dot{width:34px;height:34px}.marker .dot .ico{width:19px;height:19px}.marker{margin:-17px 0 0 -17px}.marker .lbl{font-size:16px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.gh{color:#15803d!important}.gl{padding-left:0;list-style:none}.gl li{margin:4px 0;line-height:1.5}.gtag{display:inline-block;min-width:2.6em;text-align:center;font-size:.8em;color:#fff;background:#16a34a;border-radius:6px;padding:0 6px;margin-right:6px}
+.gtag[data-c=节能]{background:#ea580c}.gtag[data-c=节水]{background:#0284c7}.gtag[data-c=节材]{background:#7c3aed}.gtag[data-c=节地]{background:#a16207}.gtag[data-c=环保]{background:#16a34a}.gtag[data-c=低碳]{background:#0f766e}.gtag[data-c=人本]{background:#db2777}
+.pfl li.pf{cursor:pointer;border-radius:6px;padding:2px 4px;margin-left:-4px}.pfl li.pf:hover{background:#e0f2fe}.pfl li.pf.on{background:#cffafe;outline:2px solid #06b6d4}.fhint{font-weight:400;font-size:.78em;color:#0891b2}
+</style>
+</head>
+<body class="mode-site">
+<header>
+  <button class="hbtn ic" id="homeBtn" aria-label="首页" title="首页"></button>
+  <h1>工程沙盘虚拟仿真<small>安徽工业大学</small></h1>
+  <nav id="modeTabs" role="tablist" aria-label="学习模式">
+    <button class="mtab" role="tab" data-mode="site" title="① 智慧工地"><span class="mi"></span><b>①</b><span>智慧工地</span></button>
+    <button class="mtab" role="tab" data-mode="build" title="② 建造过程"><span class="mi"></span><b>②</b><span>建造过程</span></button>
+    <button class="mtab" role="tab" data-mode="ops" title="③ 建成运维"><span class="mi"></span><b>③</b><span>建成运维</span></button>
+    <button class="mtab" role="tab" data-mode="ws" title="④ 构件工坊"><span class="mi"></span><b>④</b><span>构件工坊</span></button>
+  </nav>
+  <button class="hbtn" id="wsBack">‹ <span>回到工地</span></button>
+  <span class="grow"></span>
+  <span class="tagsim">教学模拟数据</span>
+  <button class="hbtn" id="rotateBtn">⟳ 横屏</button>
+  <button class="hbtn" id="teachBtn" title="学习中心：任务卡 · 进度 · 小测"><span class="ti"></span><span class="hide-s">学习中心</span><span class="prog"><span id="progress">0/48</span><span class="bar"><i id="progressBar"></i></span></span></button>
+  <button class="hbtn ic" id="helpBtn" aria-label="新手引导" title="新手引导"></button>
+  <button class="hbtn ic hide-s" id="fsBtn" aria-label="全屏" title="全屏"></button>
+</header>
+<div id="stage"></div>
+<div id="markers"></div>
+<div id="wsHost"></div>
+
+<aside id="side" aria-label="学习面板">
+  <div class="sideh"><b id="sideTitle">学习面板</b><button id="sideMin" aria-label="收起学习面板" title="收起">‹</button></div>
+  <div class="sideb">
+    <section id="sideSite"></section>
+    <section id="procBar" aria-live="polite"></section>
+    <section id="sideOps"></section>
+    <section id="stageCard"><div class="scb"></div></section>
+  </div>
+</aside>
+<button id="sideOpen" aria-label="展开学习面板"></button>
+
+<section id="panel" aria-live="polite">
+  <button class="x" id="panelClose" aria-label="关闭">×</button>
+  <div class="pbody"></div>
+</section>
+
+<button id="dataBtn" aria-label="数据面板" title="打开与当前模式联动的数据大屏"></button>
+
+<nav id="tools" aria-label="视图工具">
+  <button data-pop="view" title="视角"></button>
+  <button data-pop="roam" title="漫游"></button>
+  <button data-pop="env" title="环境"></button>
+  <button data-pop="layers" title="图层"></button>
+</nav>
+<div class="pop" id="pop-view"><h4>视角</h4><div class="grid2">
+  <button class="btn" data-view="top">俯瞰</button><button class="btn" data-view="south">南侧</button>
+  <button class="btn" data-view="east">东侧</button><button class="btn" data-view="north">北侧</button>
+  <button class="btn" data-view="west">西侧</button></div></div>
+<div class="pop" id="pop-roam"><h4>漫游</h4><div class="grid2">
+  <button class="btn" data-walk="car">车内视角</button><button class="btn" data-walk="walk">人视角</button>
+  <button class="btn primary" id="tourBtn" style="grid-column:span 2">参观路线（全场 29 站）</button></div></div>
+<div class="pop" id="pop-env"><h4>环境模拟</h4>
+  <label class="chk"><input type="checkbox" id="dayToggle"> <span>夜间</span></label>
+  <label class="chk"><input type="checkbox" id="rainToggle"> <span>暴雨（空格键）</span></label>
+  <label class="chk"><input type="checkbox" id="sprayToggle"> <span>扬尘超限 → 喷淋联动</span></label></div>
+<div class="pop" id="pop-layers"><h4>图层</h4>
+  <label class="chk"><input type="checkbox" id="markerToggle" checked> <span>显示点位图标</span></label>
+  <div id="cats"></div>
+  <h5>构件</h5>
+  <label class="chk"><input type="checkbox" id="shellToggle"> <span>剥开外壳（隐藏爬架、安全网）</span></label>
+  <div id="layers"></div></div>
+
+<div class="bar-float" id="walkBar"><span id="walkName"></span><button class="hbtn" id="walkPause">暂停</button><button class="hbtn" id="walkExit">退出</button></div>
+<div class="bar-float" id="tourBar"><button class="hbtn" id="tourPrev">‹ 上一站</button><span id="tourName"></span><button class="hbtn" id="tourNext">下一站 ›</button><button class="hbtn" id="tourExit">结束</button></div>
+<div id="toast"></div>
+<nav id="timeline" aria-label="建设阶段时间轴"><div id="tlChips"></div><button id="tlPts" aria-pressed="false" title="显示本阶段点位"></button><button class="hbtn" id="tlPlay">▶ 全过程</button></nav>
+<div id="dash" role="dialog" aria-label="数据大屏"></div>
+<div id="splitHandle" title="拖动调整左右比例"></div>
+<div id="lightbox"><img alt=""></div>
+
+<section id="home" aria-label="首页">
+  <div class="hwrap">
+    <div class="htop"><span class="sch2">安徽工业大学 · 建筑工程学院 · 智能建造</span><h2>工程沙盘虚拟仿真系统</h2>
+      <p>把实验室的智慧工地沙盘搬到屏幕上：先认识工地上的设备，再看一栋楼从策划、施工、运维到拆除的全过程。</p></div>
+    <div class="hcards" id="hcards"></div>
+    <div class="hacts" id="hrow"></div>
+    <div class="hfoot">教学模拟数据 · 首次进入有 30 秒新手引导，之后点右上角 ? 可再看</div>
+  </div>
+</section>
+
+<script src="data/shapan-data.js"></script>
+<script src="data/stages-data.js"></script>
+<script src="data/dashboard-data.js"></script>
+<script src="data/scenarios.js"></script>
+<script src="data/teach-data.js"></script>
+<script src="data/green-data.js"></script>
+<script src="data/greenlife-data.js"></script>
+<script src="data/ops-data.js"></script>
+<script src="data/workshop-data.js"></script>
+<script src="data/photo-list.js"></script>
+<script>window.SHAPAN_API = window.SHAPAN_API || { enabled: false, base: "" };</script>
+<script src="app.js"></script>
+</body>
+</html>
